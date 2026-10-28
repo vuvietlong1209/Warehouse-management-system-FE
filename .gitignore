@@ -1,0 +1,34 @@
+# Installed dependencies and generated Next.js output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Local configuration and credentials; publish templates only
+.env*
+!.env.example
+!.env.local.example
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Local deployment state, logs and temporary files
+.vercel/
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Editor and OS metadata
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Keep package-lock.json, next-env.d.ts and all application/config sources.
