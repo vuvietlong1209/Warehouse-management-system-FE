@@ -14,7 +14,7 @@ const ReportBuilderDialog = dynamic(() => import('@/components/report-builder-di
 
 
 type PageInfo = { page: number; page_size: number; total: number; total_pages: number };
-type InventoryRow = { id:number; code:string; name:string; unit:string; beginning_quantity:number; beginning_value:number; import_quantity:number; import_value:number; export_quantity:number; export_value:number; adjustment_quantity:number; ending_quantity:number; ending_value:number };
+type InventoryRow = { id:number; code:string; name:string; unit:string; beginning_quantity:number; beginning_value:number; import_quantity:number; import_value:number; export_quantity:number; export_value:number; adjustment_quantity:number; adjustment_value:number; ending_quantity:number; ending_value:number };
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
@@ -133,7 +133,25 @@ function ReportKpi({icon,label,value,color='text-slate-900'}:{icon?:React.ReactN
 
 function InventoryKpis({summary}:{summary:Record<string,number>}) { return <div className="report-kpi-grid"><ReportKpi icon={<Wallet className="size-4 text-slate-500"/>} label="Tồn đầu kỳ" value={`${number.format(summary.beginning_quantity||0)} đơn vị`}/><ReportKpi icon={<ArrowDownToLine className="size-4 text-emerald-600"/>} label="Nhập trong kỳ" value={`${number.format(summary.import_quantity||0)} đơn vị`} color="text-emerald-700"/><ReportKpi icon={<ArrowUpFromLine className="size-4 text-blue-600"/>} label="Xuất trong kỳ" value={`${number.format(summary.export_quantity||0)} đơn vị`} color="text-blue-700"/><ReportKpi icon={<Wallet className="size-4 text-blue-600"/>} label="Tồn cuối kỳ" value={`${number.format(summary.ending_quantity||0)} đơn vị`} color="text-blue-700"/></div> }
 
-function InventoryTable({rows,summary,offset}:{rows:InventoryRow[];summary:Record<string,number>;offset:number}) { const isMoney=(index:number)=>[1,3,5,8].includes(index); return <WholeRowViewport key={rows.map(row => row.id).join(',')} className="report-table-wrap" label="Danh sách báo cáo"><table className="report-table inventory-report-table min-w-[1320px] w-full border-collapse"><thead><tr><th rowSpan={2} className="stt-column">STT</th><th rowSpan={2} >Mã SP</th><th rowSpan={2} >Tên sản phẩm</th><th rowSpan={2}>ĐVT</th><th colSpan={2}>Đầu kỳ</th><th colSpan={2}>Nhập trong kỳ</th><th colSpan={2}>Xuất trong kỳ</th><th rowSpan={2} className="text-center">Điều chỉnh</th><th colSpan={2}>Cuối kỳ</th></tr><tr><th className="text-center">SL</th><th className="text-center">Giá trị (VNĐ)</th><th className="text-center">SL</th><th className="text-center">Giá trị (VNĐ)</th><th className="text-center">SL</th><th className="text-center">Giá trị (VNĐ)</th><th className="text-center">SL</th><th className="text-center">Giá trị (VNĐ)</th></tr></thead><tbody>{!rows.length && <ReportEmptyRow columns={13} />}{rows.map((r,i)=><tr key={r.id}><td className="stt-column">{offset+i+1}</td><td className="font-semibold text-blue-700">{r.code}</td><td className="min-w-56 font-medium text-slate-800">{r.name}</td><td>{r.unit}</td>{[r.beginning_quantity,r.beginning_value,r.import_quantity,r.import_value,r.export_quantity,r.export_value,r.adjustment_quantity,r.ending_quantity,r.ending_value].map((v,j)=><td key={j} className="text-center">{isMoney(j)?amount.format(Number(v)):number.format(Number(v))}</td>)}</tr>)}</tbody><tfoot><tr><th colSpan={4}>TỔNG CỘNG</th>{['beginning_quantity','beginning_value','import_quantity','import_value','export_quantity','export_value','adjustment_quantity','ending_quantity','ending_value'].map((key,j)=><th key={key} className="text-center">{isMoney(j)?amount.format(summary[key]||0):number.format(summary[key]||0)}</th>)}</tr></tfoot></table></WholeRowViewport> }
+function InventoryTable({rows,summary,offset}:{rows:InventoryRow[];summary:Record<string,number>;offset:number}) {
+  const fields = ['beginning_quantity', 'beginning_value', 'import_quantity', 'import_value', 'export_quantity',
+    'export_value', 'adjustment_quantity', 'adjustment_value', 'ending_quantity', 'ending_value'] as const;
+  const cellValue = (value:number, index:number) => (index % 2 ? amount : number).format(value);
+  return <WholeRowViewport key={rows.map(row => row.id).join(',')} className="report-table-wrap nxt-table-viewport" label="Danh sách báo cáo">
+    <table className="report-table inventory-report-table nxt-fit-table w-full border-collapse">
+      <colgroup>{[2.8,9.2,17,3.5,...Array.from({length:5}, () => [4.3,9.2]).flat()].map((width,index) => <col key={index} style={{width:`${width}%`}}/>)}</colgroup>
+      <thead><tr><th rowSpan={2} className="stt-column">STT</th><th rowSpan={2}>Mã SP</th><th rowSpan={2}>Tên sản phẩm</th><th rowSpan={2}>ĐVT</th>
+        {['Đầu kỳ', 'Nhập trong kỳ', 'Xuất trong kỳ', 'Điều chỉnh', 'Cuối kỳ'].map(label => <th key={label} colSpan={2}>{label}</th>)}
+      </tr><tr>{Array.from({length:10}, (_, index) => <th key={index} className="text-center">{index % 2 ? 'Giá trị (VNĐ)' : 'SL'}</th>)}</tr></thead>
+      <tbody>{!rows.length && <ReportEmptyRow columns={14} />}{rows.map((row,index) => <tr key={row.id}>
+        <td className="stt-column">{offset+index+1}</td><td className="font-semibold text-blue-700">{row.code}</td>
+        <td className="nxt-product-name font-medium text-slate-800">{row.name}</td><td>{row.unit}</td>
+        {fields.map((field,index) => <td key={field} className="text-center">{cellValue(Number(row[field]),index)}</td>)}
+      </tr>)}</tbody>
+      <tfoot><tr><th colSpan={4}>TỔNG CỘNG</th>{fields.map((field,index) => <th key={field} className="text-center">{cellValue(summary[field]||0,index)}</th>)}</tr></tfoot>
+    </table>
+  </WholeRowViewport>;
+}
 
 
 function documentStatus(status:string) { const labels:Record<string,string>={Pending:'Chờ duyệt',Confirmed:'Đã xác nhận',Rejected:'Đã từ chối',InProgress:'Đang thực hiện',Completed:'Đã hoàn tất',Cancelled:'Đã hủy'}; const tone=['Confirmed','Completed'].includes(status)?'text-emerald-700':['Pending','InProgress'].includes(status)?'text-amber-700':['Rejected'].includes(status)?'text-rose-700':'text-slate-500'; return {label:labels[status]||status,tone}; }
@@ -164,10 +182,10 @@ function CostingTable({ rows, summary, offset }: { rows: CostingRow[]; summary: 
 function StockTable({ rows, summary, offset }: { rows: InventoryRow[]; summary: Record<string, number>; offset: number }) {
   return <WholeRowViewport key={rows.map(row => row.id).join(',')} className="report-table-wrap" label="Danh sách báo cáo tồn kho">
     <table className="report-table min-w-[760px] w-full">
-      <thead><tr><th className="stt-column">STT</th><th>Mã sản phẩm</th><th>Tên sản phẩm</th><th>Đơn vị tính</th><th className="text-center">Số lượng tồn</th><th className="text-center">Giá trị tồn (VNĐ)</th></tr></thead>
+      <thead><tr><th className="stt-column">STT</th><th>Mã sản phẩm</th><th>Tên sản phẩm</th><th className="text-center">Đơn vị tính</th><th className="text-center">Số lượng tồn</th><th className="text-center">Giá trị tồn (VNĐ)</th></tr></thead>
       <tbody>{!rows.length && <ReportEmptyRow columns={6} />}{rows.map((row, index) => <tr key={row.id}>
         <td className="stt-column">{offset + index + 1}</td><td className="font-semibold text-blue-700">{row.code}</td>
-        <td className="min-w-56 break-words font-medium text-slate-800">{row.name}</td><td>{row.unit}</td>
+        <td className="min-w-56 break-words font-medium text-slate-800">{row.name}</td><td className="text-center">{row.unit}</td>
         <td className="text-center">{number.format(Number(row.ending_quantity) || 0)}</td><td className="text-center">{amount.format(Number(row.ending_value) || 0)}</td>
       </tr>)}</tbody>
       <tfoot><tr><th colSpan={4}>TỔNG CỘNG</th><th className="text-center">{number.format(summary.ending_quantity || 0)}</th><th className="text-center">{amount.format(summary.ending_value || 0)}</th></tr></tfoot>

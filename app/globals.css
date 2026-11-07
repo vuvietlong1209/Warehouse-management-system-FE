@@ -1177,6 +1177,21 @@ body {
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
   }
+  /* Fit all fourteen NXT columns within the screen without changing print layouts. */
+  .nxt-table-viewport { container-type: inline-size; }
+  .nxt-fit-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: clamp(10px, 1.1cqw, 13px);
+  }
+  .paged-data-page[data-compact-report] > .paged-list-panel .nxt-fit-table :is(th, td) {
+    min-width: 0;
+    padding-inline: clamp(2px, 0.28cqw, 5px);
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .nxt-fit-table .nxt-product-name { line-height: 1.35; }
   .paged-data-page[data-compact-report] > .paged-list-panel .inventory-summary-table tbody td {
     padding: 0.1875rem 0.5rem;
     line-height: 1.125rem;

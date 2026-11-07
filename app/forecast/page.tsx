@@ -62,10 +62,10 @@ type ForecastResponse = {
     validation_mae: number | null;
     test_mae: number | null;
     selection_source: 'validation_walk_forward';
-    metric_scope: 'live_validation';
+    metric_scope: 'rolling_origin_test';
     evaluation_horizon_weeks: number;
     forecast_horizon: 'current_week_estimate_then_next_week' | 'next_week_after_completed_selected_week';
-    calibration_source: 'validation_walk_forward';
+    calibration_source: 'rolling_origin_out_of_sample';
   };
   close_through_date?: string;
   available_weeks?: { week_start: string; week_end: string; is_current: boolean }[];

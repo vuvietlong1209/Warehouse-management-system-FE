@@ -32,7 +32,7 @@ export function costingTotals(summary: Record<string, number>): ReportCell[] {
   return ['TỔNG CỘNG', '', '', '', summary.period_export_qty || 0, '', '', revenue, cost];
 }
 const quantityKeys = ['beginning_quantity', 'beginning_value', 'import_quantity', 'import_value',
-  'export_quantity', 'export_value', 'adjustment_quantity', 'ending_quantity', 'ending_value'];
+  'export_quantity', 'export_value', 'adjustment_quantity', 'adjustment_value', 'ending_quantity', 'ending_value'];
 const statusLabels: Record<string, string> = { Pending: 'Chờ duyệt', Confirmed: 'Đã xác nhận',
   Rejected: 'Đã từ chối', InProgress: 'Đang thực hiện', Completed: 'Đã hoàn tất', Cancelled: 'Đã hủy' };
 
@@ -103,13 +103,14 @@ export async function collectReportSnapshot(criteria: ReportCriteria, warehouses
     } else if (criteria.reportType === 'NXT') {
       snapshot.columns = [column('STT', 7, 'center'), column('Mã SP', 14), column('Tên sản phẩm', 28), column('ĐVT', 6, 'center'),
         numeric('Đầu kỳ SL', 9), numeric('Đầu kỳ giá trị'), numeric('Nhập SL', 9), numeric('Nhập giá trị'),
-        numeric('Xuất SL', 9), numeric('Xuất giá trị'), numeric('Điều chỉnh', 10), numeric('Cuối kỳ SL', 9), numeric('Cuối kỳ giá trị')];
+        numeric('Xuất SL', 9), numeric('Xuất giá trị'), numeric('Điều chỉnh SL', 10), numeric('Điều chỉnh giá trị'),
+        numeric('Cuối kỳ SL', 9), numeric('Cuối kỳ giá trị')];
       snapshot.rows = records.map((row, index) => [index + 1, row.code, row.name, row.unit || '', ...quantityKeys.map(key => Number(row[key]) || 0)]);
       snapshot.totals = [['TỔNG CỘNG', '', '', '', ...quantityKeys.map(key => records.reduce((sum, row) => sum + (Number(row[key]) || 0), 0))]];
     }
   } else {
     // Read fresh documents, not the displayed page or potentially stale context arrays.
-    const endpoint = criteria.reportType === 'PO' ? 'goods-receipts' : criteria.reportType === 'SO' ? 'goods-issues' : 'inventory-checks';
+    const endpoint = criteria.reportType === 'PO' ? 'goods-receipts/postings' : criteria.reportType === 'SO' ? 'goods-issues/postings' : 'inventory-checks';
     const body = await read(`/api/${endpoint}`);
     if (!Array.isArray(body)) throw new Error('Không tải được đầy đủ danh sách chứng từ');
     const search = snapshot.search.toLocaleLowerCase('vi-VN');

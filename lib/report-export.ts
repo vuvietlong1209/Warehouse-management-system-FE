@@ -14,19 +14,27 @@ const escape = (value: string) => value.replace(/[&<>"']/g, character => ({ '&':
 
 export function reportPrintHtml(snapshot: ReportSnapshot) {
   const landscape = ['NXT', 'COGS'].includes(snapshot.reportType);
+  const paperWidth = snapshot.paperSize === 'A5' ? landscape ? 210 : 148 : landscape ? 297 : 210;
+  const margin = snapshot.paperSize === 'A5' ? 7 : 10;
   const totalWidth = snapshot.columns.reduce((sum, column) => sum + column.width, 0);
   const cells = (row: (string | number)[], total = false) => {
     const span = total ? reportTotalLabelSpan(row) : 1;
-    return row.map((value, index) => index > 0 && index < span ? '' : `<td${typeof value === 'number' ? ' class="number"' : ''}${index === 0 && span > 1 ? ` colspan="${span}"` : ''} style="text-align:${total && index === 0 ? 'left' : index === 0 ? 'center' : snapshot.columns[index].align}">${escape(String(formatReportCell(value, snapshot.fromDate)))}</td>`).join('');
+    return row.map((value, index) => {
+      if (index > 0 && index < span) return '';
+      const content = escape(String(formatReportCell(value, snapshot.fromDate)));
+      return `<td${typeof value === 'number' ? ' class="number"' : ''}${index === 0 && span > 1 ? ` colspan="${span}"` : ''} style="text-align:${total && index === 0 ? 'left' : index === 0 ? 'center' : snapshot.columns[index].align}">${typeof value === 'number' ? `<span class="number-value">${content}</span>` : content}</td>`;
+    }).join('');
   };
   return `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>${escape(snapshot.title)}</title><style>
     @page { size: ${snapshot.paperSize} ${landscape ? 'landscape' : 'portrait'}; margin: ${snapshot.paperSize === 'A5' ? '7mm' : '10mm'}; }
-    * { box-sizing: border-box; } body { font-family:'Times New Roman',Times,serif; color:#111827; margin:0; font-size:9pt; }
+    * { box-sizing: border-box; } body { width:${paperWidth - margin * 2}mm; font-family:'Times New Roman',Times,serif; color:#111827; margin:0; font-size:9pt; }
     h1 { font-size:14pt; text-align:center; margin:10px 0 6px; } p { margin:4px 0; }
     .meta { display:flex; justify-content:space-between; gap:16px; margin-bottom:12px; } .period { text-align:center; margin-bottom:10px; }
     table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:${landscape ? snapshot.paperSize === 'A5' ? '6.5' : '8' : '8.5'}pt; }
     th,td { border:1px solid #d9d9d9; padding:5px 4px; overflow-wrap:anywhere; vertical-align:middle; }
     td.number { white-space:nowrap; ${landscape && snapshot.paperSize === 'A5' ? 'font-size:6pt;' : ''} }
+    .number-value { display:inline-block; white-space:nowrap; }
+    th.compact-label { white-space:nowrap; }
     thead { display:table-header-group; } th { background:#f1f5f9; text-align:center; font-weight:600; } tr { break-inside:avoid; }
     tfoot { display:table-row-group; font-weight:600; } .empty { text-align:center; padding:20px; }
     .signatures { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:6mm; padding-bottom:22mm; text-align:center; font-size:${snapshot.paperSize === 'A5' ? '8' : '9'}pt; break-inside:avoid; page-break-inside:avoid; }
@@ -34,7 +42,7 @@ export function reportPrintHtml(snapshot: ReportSnapshot) {
   </style></head><body><div class="meta"><span>ĐƠN VỊ: QUẢN LÝ KHO & THEO DÕI TỒN KHO</span><span>Mẫu số: ${escape(snapshot.formCode)}</span></div>
   <h1>${escape(snapshot.title)}</h1><p class="period">${escape(reportPeriodLabel(snapshot))}</p>
   <div class="meta"><span>Kho: ${escape(snapshot.warehouseName)}${snapshot.search ? `<br>Từ khóa: ${escape(snapshot.search)}` : ''}</span><span>Ngày lập: ${new Date(snapshot.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' })}</span></div>
-  <table><colgroup>${snapshot.columns.map(column => `<col style="width:${column.width / totalWidth * 100}%">`).join('')}</colgroup><thead><tr>${snapshot.columns.map(column => `<th>${escape(column.label)}</th>`).join('')}</tr></thead>
+  <table><colgroup>${snapshot.columns.map(column => `<col style="width:${column.width / totalWidth * 100}%">`).join('')}</colgroup><thead><tr>${snapshot.columns.map(column => ['STT', 'ĐVT'].includes(column.label) ? `<th class="compact-label"><span class="number-value">${escape(column.label)}</span></th>` : `<th>${escape(column.label)}</th>`).join('')}</tr></thead>
   <tbody>${snapshot.rows.length ? snapshot.rows.map(row => `<tr>${cells(row)}</tr>`).join('') : `<tr><td class="empty" colspan="${snapshot.columns.length}">Không có dữ liệu phù hợp</td></tr>`}</tbody>
   <tfoot>${snapshot.totals.map(row => `<tr>${cells(row, true)}</tr>`).join('')}</tfoot></table>
   <div class="signatures"><div><b>NGƯỜI LẬP BIỂU</b><p>(Ký, ghi rõ họ tên)</p></div><div><b>THỦ KHO</b><p>(Ký, ghi rõ họ tên)</p></div><div><b>KẾ TOÁN TRƯỞNG</b><p>(Ký, ghi rõ họ tên)</p></div><div><b>GIÁM ĐỐC</b><p>(Ký, đóng dấu)</p></div></div></body></html>`;
@@ -55,6 +63,20 @@ export async function printReportSnapshot(snapshot: ReportSnapshot) {
     const view = frame.contentWindow;
     if (!view) throw new Error('Không mở được bản in báo cáo');
     await frame.contentDocument?.fonts.ready;
+    const printDocument = frame.contentDocument;
+    if (!printDocument) throw new Error('Không tải được nội dung bản in báo cáo');
+    // Measure at the printable page width, even though the host iframe is hidden.
+    // Fit long amounts and compact headings after fonts load, within their cells.
+    printDocument.querySelectorAll<HTMLElement>('td.number, th.compact-label').forEach(cell => {
+      const value = cell.querySelector<HTMLElement>('.number-value');
+      if (!value) return;
+      const style = view.getComputedStyle(cell);
+      const available = cell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const width = value.getBoundingClientRect().width;
+      if (available > 0 && width > available) {
+        value.style.fontSize = `${parseFloat(view.getComputedStyle(value).fontSize) * available / width * .98}px`;
+      }
+    });
     view.addEventListener('afterprint', () => frame.remove(), { once: true });
     view.focus();
     view.print();
