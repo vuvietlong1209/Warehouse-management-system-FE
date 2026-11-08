@@ -55,7 +55,7 @@ type ForecastResponse = {
   data: ForecastRow[];
   kpis: ForecastKpis;
   period: ForecastPeriod | null;
-  assumptions: { lead_time_days: number; service_level: number };
+  assumptions: { lead_time_days: number; safety_stock_window_weeks: number };
   data_coverage?: ForecastCoverage;
   quality?: {
     series_count: number;
@@ -65,7 +65,7 @@ type ForecastResponse = {
     metric_scope: 'rolling_origin_test';
     evaluation_horizon_weeks: number;
     forecast_horizon: 'current_week_estimate_then_next_week' | 'next_week_after_completed_selected_week';
-    calibration_source: 'rolling_origin_out_of_sample';
+    safety_stock_source: 'completed_weekly_issues';
   };
   close_through_date?: string;
   available_weeks?: { week_start: string; week_end: string; is_current: boolean }[];
@@ -184,7 +184,7 @@ export default function ForecastPage() {
         actions={(
           <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="secondary" onClick={() => showAlert({ title: 'Lưu ý về dự báo', tone: 'info',
-            message: 'Lượng đã nhập chỉ tính các lần nhập đã duyệt trong tuần và kho đang chọn. Dự báo lượng xuất vẫn dùng lịch sử xuất. Tuần quá khứ dùng tồn cuối tuần; dự báo áp dụng cho tuần liền sau.\nTồn an toàn và đề xuất nhập chỉ tính khi đủ lịch sử liên tục; dấu “—” không phải 0. Kết quả quá khứ được tính lại từ lịch sử đang lưu, không phải bản chụp lần chạy cũ.\nChốt dữ liệu chỉ thực hiện sau khi đã xử lý đầy đủ chứng từ và luôn áp dụng đến Chủ nhật gần nhất của hiện tại, độc lập tuần đang xem.' })}>
+            message: 'Lượng đã nhập chỉ tính các lần nhập đã duyệt trong tuần và kho đang chọn. Dự báo lượng xuất vẫn dùng lịch sử xuất. Tuần quá khứ dùng tồn cuối tuần; dự báo áp dụng cho tuần liền sau.\nTồn an toàn = lượng xuất tuần cao nhất − lượng xuất trung bình của những tuần có xuất, trong 12 tuần hoàn tất gần nhất của từng vật tư–kho; làm tròn lên. Nếu cả 12 tuần không có xuất thì tồn an toàn bằng 0. Thời gian giao hàng cố định 7 ngày.\nTồn an toàn và đề xuất nhập chỉ tính khi đủ lịch sử liên tục; dấu “—” không phải 0. Kết quả quá khứ được tính lại từ lịch sử đang lưu, không phải bản chụp lần chạy cũ. Chốt dữ liệu áp dụng đến Chủ nhật gần nhất của hiện tại, sau khi đã xử lý đầy đủ chứng từ.' })}>
             <Info className="size-4" />Lưu ý
           </Button>
           <Button variant="secondary" disabled={loading || closingHistory} onClick={() => void loadForecast()}>

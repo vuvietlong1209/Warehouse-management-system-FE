@@ -32,7 +32,7 @@ type ReplenishmentResponse = {
   } | null;
   assumptions?: {
     lead_time_days: number;
-    service_level: number;
+    safety_stock_window_weeks: number;
   };
   message?: string;
 };
@@ -57,7 +57,7 @@ export function ReplenishmentDialog({
   const [onlyRequired, setOnlyRequired] = useState(true);
   const [rows, setRows] = useState<ReplenishmentRow[]>([]);
   const [period, setPeriod] = useState<ReplenishmentResponse['period']>(null);
-  const [assumptions, setAssumptions] = useState({ lead_time_days: 7, service_level: 0.95 });
+  const [assumptions, setAssumptions] = useState({ lead_time_days: 7, safety_stock_window_weeks: 12 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -84,7 +84,7 @@ export function ReplenishmentDialog({
       const available = new Set((body.data || []).filter(row => row.forecast_next_week != null && row.recommended_order_quantity != null).map(row => row.item_id));
       setSelected(previous => new Set([...previous].filter(id => available.has(id))));
       setPeriod(body.period || null);
-      setAssumptions(body.assumptions || { lead_time_days: 7, service_level: 0.95 });
+      setAssumptions(body.assumptions || { lead_time_days: 7, safety_stock_window_weeks: 12 });
     } catch (cause) {
       if (controller.signal.aborted) return;
       setRows([]);
@@ -168,7 +168,6 @@ export function ReplenishmentDialog({
             </label>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <StatusBadge tone="neutral">{selectedWarehouse}</StatusBadge>
-              <StatusBadge tone="info">Mức phục vụ {number.format(assumptions.service_level * 100)}%</StatusBadge>
               <StatusBadge tone="neutral"><CalendarClock className="size-3.5" /> Lead time {assumptions.lead_time_days} ngày</StatusBadge>
             </div>
           </div>
