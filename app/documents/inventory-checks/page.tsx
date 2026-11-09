@@ -1,4 +1,5 @@
 'use client';
+import { businessDateISO } from '@/lib/business-date';
 
 import React, { useMemo, useState } from 'react';
 import { ShortDateField } from '@/components/short-date-field';
@@ -52,8 +53,8 @@ export default function InventoryChecksPage() {
 
   // Form State
   const [code, setCode] = useState(`KK-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`);
-  const [fromDate, setFromDate] = useState(new Date().toISOString().split('T')[0]);
-  const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
+  const [fromDate, setFromDate] = useState(businessDateISO);
+  const [toDate, setToDate] = useState(businessDateISO);
   const [warehouseId, setWarehouseId] = useState<number>(warehouses[0]?.id || 1);
   const [description, setDescription] = useState('');
 

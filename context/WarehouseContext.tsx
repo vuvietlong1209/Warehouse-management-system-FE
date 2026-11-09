@@ -13,6 +13,7 @@ const CACHE_VERSION = 8; // Includes current per-bin reservation quantities.
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const DATA_CHANGE_KEY = 'ewarehouse_data_changed';
 type DocumentCreationOptions = { deferSync?: boolean };
+export type ItemImportResult = { inserted: number; failed: number; errors: { row: number; code: string; message: string }[] };
 let bootstrapCacheEpoch = 0;
 
 export type CatalogEntity = 'item' | 'bin' | 'warehouse' | 'partner' | 'user' | 'unit';
@@ -102,7 +103,7 @@ interface WarehouseContextType {
   addItem: (item: Omit<Item, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateItem: (id: number, data: Partial<Item>) => Promise<void>;
   deleteItem: (id: number) => Promise<{ success: boolean; message?: string }>;
-  importItemsFromExcel: (newItems: Omit<Item, 'id' | 'created_at' | 'updated_at'>[]) => Promise<void>;
+  importItemsFromExcel: (newItems: Omit<Item, 'id' | 'created_at' | 'updated_at'>[]) => Promise<ItemImportResult>;
 
   // Bins CRUD
   addBin: (bin: Omit<Bin, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
@@ -580,7 +581,7 @@ export const WarehouseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [mutateCatalog]);
 
   const importItemsFromExcel = useCallback(async (newItems: Omit<Item, 'id' | 'created_at' | 'updated_at'>[]) => {
-    await mutateCatalog(`${API}/items/import`, { method: 'POST', body: JSON.stringify({ items: newItems }) });
+    return await mutateCatalog(`${API}/items/import`, { method: 'POST', body: JSON.stringify({ items: newItems }) }) as ItemImportResult;
   }, [mutateCatalog]);
 
   // ─── Bins CRUD ───

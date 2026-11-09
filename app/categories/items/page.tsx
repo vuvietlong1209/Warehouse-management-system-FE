@@ -144,9 +144,12 @@ export default function ItemsPage() {
           status: true,
         }));
 
-        await importItemsFromExcel(parsedItems);
+        const result = await importItemsFromExcel(parsedItems);
         await loadItems();
-        notify({ tone: 'success', title: 'Đã nhập dữ liệu Excel', message: `Đã xử lý ${parsedItems.length} dòng vật tư.` });
+        notify({ tone: result.failed ? 'warning' : 'success', title: result.failed ? 'Đã nhập một phần dữ liệu Excel' : 'Đã nhập dữ liệu Excel',
+          message: `Đã thêm ${result.inserted}/${parsedItems.length} sản phẩm. Không nhập được: ${result.failed}.`
+            + (result.errors.length ? '\n' + result.errors.slice(0, 5).map(row => `Dòng ${row.row} (${row.code || 'chưa có mã'}): ${row.message}`).join('\n') : '')
+            + (result.errors.length > 5 ? `\nCòn ${result.errors.length - 5} dòng không nhập được.` : '') });
       } catch (err: any) {
         notify({ tone: 'error', title: 'Không thể nhập dữ liệu Excel', message: err.message });
       } finally {

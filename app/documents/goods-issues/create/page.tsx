@@ -1,4 +1,5 @@
 'use client';
+import { businessDateISO } from '@/lib/business-date';
 
 import { ShortDateField } from '@/components/short-date-field';
 
@@ -22,7 +23,7 @@ type IssueLine = {
   bin_id: number;
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = businessDateISO;
 const issueCode = () => `SO-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
 
 export default function CreateGoodsIssuePage() {

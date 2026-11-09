@@ -1,4 +1,5 @@
 'use client';
+import { businessDateISO } from '@/lib/business-date';
 
 import { ShortDateField } from '@/components/short-date-field';
 
@@ -20,7 +21,7 @@ type CheckLine = {
   actual_quantity: number;
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = businessDateISO;
 const checkCode = () => `KK-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
 
 export default function CreateInventoryCheckPage() {

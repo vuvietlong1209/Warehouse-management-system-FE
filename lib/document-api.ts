@@ -1,9 +1,10 @@
+import { businessDateISO } from './business-date';
 export type DocumentKind = 'receipt' | 'issue';
 export const documentPath = (kind: DocumentKind) => `/api/goods-${kind === 'receipt' ? 'receipts' : 'issues'}`;
-export const todayISO = () => new Date().toLocaleDateString('sv-SE');
+export const todayISO = businessDateISO;
 export const fmt = (value: number | null | undefined) => value == null ? '—' : Number(value).toLocaleString('vi-VN');
-export async function documentApi<T = any>(url: string, method = 'GET', body?: unknown): Promise<T> {
-  const response = await fetch(url, { method, credentials: 'include', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+export async function documentApi<T = any>(url: string, method = 'GET', body?: unknown, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, { method, credentials: 'include', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || `Không thể xử lý (${response.status})`);
   return data;

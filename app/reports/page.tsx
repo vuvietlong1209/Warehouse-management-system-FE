@@ -1,4 +1,5 @@
 'use client';
+import { businessDateISO } from '@/lib/business-date';
 
 import { FilterSelect } from '@/components/filter-select';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,7 +20,6 @@ type InventoryRow = { id:number; code:string; name:string; unit:string; beginnin
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
 const amount = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
-const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 
 export default function ReportsPage() {
   return <Suspense fallback={<p className="p-4 text-sm text-slate-700">Đang tải báo cáo...</p>}><ReportsContent/></Suspense>;
@@ -28,13 +28,13 @@ export default function ReportsPage() {
 function ReportsContent() {
   const searchParams = useSearchParams(), requestedReport = searchParams.get('report');
   const { warehouses, goodsReceipts, goodsIssues, inventoryChecks, dataRevision } = useWarehouse();
-  const now = new Date();
+  const now = businessDateISO();
   const [reportType, setReportType] = useState<ReportType>(requestedReport === 'COGS' ? 'COGS' : 'NXT');
   useEffect(() => { if (requestedReport === 'COGS') setReportType('COGS'); }, [requestedReport]);
   const printSize = 'A4';
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [fromDate, setFromDate] = useState(iso(new Date(now.getFullYear(), now.getMonth(), 1)));
-  const [toDate, setToDate] = useState(iso(now));
+  const [fromDate, setFromDate] = useState(`${now.slice(0, 7)}-01`);
+  const [toDate, setToDate] = useState(now);
   const [warehouseId, setWarehouseId] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
